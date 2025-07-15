@@ -71,10 +71,11 @@
 
     function addDish() {
       const name = document.getElementById("dishName").value.trim();
-      const price = parseFloat(document.getElementById("dishPrice").value);
+      const unitPrice = parseFloat(document.getElementById("dishPrice").value);
       const count = parseInt(document.getElementById("dishCount").value) || 1;
-      if (name && !isNaN(price)) {
-        dishes.push({ name, price: price * count, consumers: [], count });
+      if (name && !isNaN(unitPrice)) {
+        const totalPrice = unitPrice * count;
+        dishes.push({ name, unitPrice, count, price: totalPrice, consumers: [] });
         document.getElementById("dishName").value = "";
         document.getElementById("dishPrice").value = "";
         document.getElementById("dishCount").value = 1;
@@ -87,7 +88,7 @@
     }
 
     function renderDishTable() {
-      let html = '<table class="table-auto w-full text-left text-sm"><thead><tr class="bg-gray-700"><th class="px-4 py-2">Dish</th><th class="px-4 py-2">Qty</th><th class="px-4 py-2">Price (₹)</th>';
+      let html = '<table class="table-auto w-full text-left text-sm"><thead><tr class="bg-gray-700"><th class="px-4 py-2">Dish</th><th class="px-4 py-2">Qty</th><th class="px-4 py-2">Unit Price (₹)</th><th class="px-4 py-2">Total (₹)</th>';
       users.forEach(user => {
         html += `<th class="px-4 py-2">${user}</th>`;
       });
@@ -98,7 +99,8 @@
         html += `<tr class="border-b border-gray-700">
           <td class="px-4 py-2">${isEditing ? `<input type='text' value='${dish.name}' onchange="editDish(${i}, 'name', this.value)" class="bg-gray-700 text-white p-1 rounded w-full" />` : dish.name}</td>
           <td class="px-4 py-2">${isEditing ? `<input type='number' value='${dish.count}' onchange="editDish(${i}, 'count', this.value)" class="bg-gray-700 text-white p-1 rounded w-full" />` : dish.count}</td>
-          <td class="px-4 py-2">${isEditing ? `<input type='number' value='${dish.price}' onchange="editDish(${i}, 'price', this.value)" class="bg-gray-700 text-white p-1 rounded w-full" />` : `₹${dish.price.toFixed(2)}`}</td>`;
+          <td class="px-4 py-2">${isEditing ? `<input type='number' value='${dish.unitPrice}' onchange="editDish(${i}, 'unitPrice', this.value)" class="bg-gray-700 text-white p-1 rounded w-full" />` : `₹${dish.unitPrice.toFixed(2)}`}</td>
+          <td class="px-4 py-2">₹${dish.price.toFixed(2)}</td>`;
         users.forEach(user => {
           const checked = dish.consumers.includes(user) ? 'checked' : '';
           html += `<td class="px-4 py-2 text-center"><input type="checkbox" onchange="toggleConsumer(${i}, '${user}')" ${checked}></td>`;
@@ -130,8 +132,14 @@
 
     function editDish(index, field, value) {
       if (field === 'name') dishes[index].name = value;
-      if (field === 'price') dishes[index].price = parseFloat(value) || 0;
-      if (field === 'count') dishes[index].count = parseInt(value) || 1;
+      if (field === 'unitPrice') {
+        dishes[index].unitPrice = parseFloat(value) || 0;
+        dishes[index].price = dishes[index].unitPrice * dishes[index].count;
+      }
+      if (field === 'count') {
+        dishes[index].count = parseInt(value) || 1;
+        dishes[index].price = dishes[index].unitPrice * dishes[index].count;
+      }
     }
 
     function deleteDish(index) {
