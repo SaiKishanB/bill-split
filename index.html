@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bill Splitter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f7f7f7;
+    }
+    input, button, select {
+      margin: 5px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+      border-collapse: collapse;
+      padding: 5px;
+    }
+    table {
+      margin-top: 10px;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h2>Bill Splitter</h2>
+
+  <div>
+    <h3>Add Users</h3>
+    <input type="text" id="userName" placeholder="Enter user name" />
+    <button onclick="addUser()">Add User</button>
+    <div id="userList"></div>
+  </div>
+
+  <div>
+    <h3>Add Dishes</h3>
+    <input type="text" id="dishName" placeholder="Dish name" />
+    <input type="number" id="dishPrice" placeholder="Price" />
+    <button onclick="addDish()">Add Dish</button>
+  </div>
+
+  <div>
+    <h3>Discount</h3>
+    <input type="number" id="discount" placeholder="Discount % (e.g. 10)" />
+  </div>
+
+  <div id="dishTable"></div>
+  <button onclick="calculateSplit()">Calculate Split</button>
+
+  <h3>Result</h3>
+  <div id="result"></div>
+
+  <script>
+    const users = [];
+    const dishes = [];
+
+    function addUser() {
+      const name = document.getElementById("userName").value.trim();
+      if (name && !users.includes(name)) {
+        users.push(name);
+        document.getElementById("userName").value = "";
+        renderUsers();
+        renderDishTable();
+      }
+    }
+
+    function addDish() {
+      const name = document.getElementById("dishName").value.trim();
+      const price = parseFloat(document.getElementById("dishPrice").value);
+      if (name && !isNaN(price)) {
+        dishes.push({ name, price, consumers: [] });
+        document.getElementById("dishName").value = "";
+        document.getElementById("dishPrice").value = "";
+        renderDishTable();
+      }
+    }
+
+    function renderUsers() {
+      document.getElementById("userList").innerText = users.join(", ");
+    }
+
+    function renderDishTable() {
+      if (dishes.length === 0) return;
+
+      let html = '<table><tr><th>Dish</th><th>Price</th>';
+      users.forEach(user => {
+        html += `<th>${user}</th>`;
+      });
+      html += '</tr>';
+
+      dishes.forEach((dish, i) => {
+        html += `<tr><td>${dish.name}</td><td>${dish.price.toFixed(2)}</td>`;
+        users.forEach(user => {
+          const checked = dish.consumers.includes(user) ? 'checked' : '';
+          html += `<td><input type="checkbox" onchange="toggleConsumer(${i}, '${user}')" ${checked}></td>`;
+        });
+        html += '</tr>';
+      });
+
+      html += '</table>';
+      document.getElementById("dishTable").innerHTML = html;
+    }
+
+    function toggleConsumer(dishIndex, user) {
+      const consumers = dishes[dishIndex].consumers;
+      const idx = consumers.indexOf(user);
+      if (idx > -1) {
+        consumers.splice(idx, 1);
+      } else {
+        consumers.push(user);
+      }
+    }
+
+    function calculateSplit() {
+      const discountPercent = parseFloat(document.getElementById("discount").value) || 0;
+      const userTotals = {};
+      users.forEach(user => userTotals[user] = 0);
+
+      let total = 0;
+
+      dishes.forEach(dish => {
+        if (dish.consumers.length === 0) return;
+        total += dish.price;
+        const splitPrice = dish.price / dish.consumers.length;
+        dish.consumers.forEach(user => {
+          userTotals[user] += splitPrice;
+        });
+      });
+
+      const discountAmount = (discountPercent / 100) * total;
+      const finalTotal = total - discountAmount;
+
+      const resultHTML = [`<p>Total: ₹${total.toFixed(2)}</p>`,
+                          `<p>Discount: ₹${discountAmount.toFixed(2)} (${discountPercent}%)</p>`,
+                          `<p>Final Total: ₹${finalTotal.toFixed(2)}</p>`];
+
+      users.forEach(user => {
+        const share = (userTotals[user] / total) * finalTotal;
+        resultHTML.push(`<p>${user}: ₹${share.toFixed(2)}</p>`);
+      });
+
+      document.getElementById("result").innerHTML = resultHTML.join('');
+    }
+  </script>
+</body>
+</html>
