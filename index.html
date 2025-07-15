@@ -4,53 +4,53 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bill Splitter</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f7f7f7;
-    }
-    input, button, select {
-      margin: 5px;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
-      border-collapse: collapse;
-      padding: 5px;
-    }
-    table {
-      margin-top: 10px;
-      background-color: #fff;
-    }
+    html { font-family: 'Open Sans', sans-serif; }
   </style>
 </head>
-<body>
-  <h2>Bill Splitter</h2>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-center text-yellow-400">Bill Splitting Tool</h1>
+  </header>
 
-  <div>
-    <h3>Add Users</h3>
-    <input type="text" id="userName" placeholder="Enter user name" />
-    <button onclick="addUser()">Add User</button>
-    <div id="userList"></div>
-  </div>
+  <main class="max-w-6xl mx-auto grid gap-6 md:grid-cols-2">
+    <!-- User Section -->
+    <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-semibold mb-4">Add Users</h2>
+      <div class="flex mb-4">
+        <input id="userName" type="text" placeholder="Enter user name" class="flex-grow p-2 rounded-l bg-gray-700 text-white placeholder-gray-400" />
+        <button onclick="addUser()" class="bg-yellow-500 px-4 rounded-r text-black font-bold hover:bg-yellow-400 transition">Add</button>
+      </div>
+      <p id="userList" class="text-sm text-gray-300"></p>
+    </section>
 
-  <div>
-    <h3>Add Dishes</h3>
-    <input type="text" id="dishName" placeholder="Dish name" />
-    <input type="number" id="dishPrice" placeholder="Price" />
-    <button onclick="addDish()">Add Dish</button>
-  </div>
+    <!-- Dish Section -->
+    <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <h2 class="text-xl font-semibold mb-4">Add Dishes</h2>
+      <div class="flex mb-4">
+        <input id="dishName" type="text" placeholder="Dish name" class="flex-grow p-2 rounded-l bg-gray-700 text-white placeholder-gray-400" />
+        <input id="dishPrice" type="number" placeholder="Price" class="w-28 p-2 bg-gray-700 text-white placeholder-gray-400" />
+        <button onclick="addDish()" class="bg-yellow-500 px-4 rounded-r text-black font-bold hover:bg-yellow-400 transition">Add</button>
+      </div>
+    </section>
+  </main>
 
-  <div>
-    <h3>Discount</h3>
-    <input type="number" id="discount" placeholder="Discount % (e.g. 10)" />
-  </div>
+  <section class="max-w-6xl mx-auto mt-6">
+    <div class="flex justify-end items-center mb-4">
+      <label for="discount" class="mr-2 font-semibold">Overall Discount %</label>
+      <input id="discount" type="number" placeholder="e.g. 10" class="p-2 rounded bg-gray-700 text-white w-24 placeholder-gray-400" />
+    </div>
+    <div id="dishTable" class="overflow-auto"></div>
+    <button onclick="calculateSplit()" class="mt-4 bg-green-500 text-black px-6 py-2 rounded font-bold hover:bg-green-400 transition">Calculate Split</button>
+  </section>
 
-  <div id="dishTable"></div>
-  <button onclick="calculateSplit()">Calculate Split</button>
-
-  <h3>Result</h3>
-  <div id="result"></div>
+  <section class="max-w-6xl mx-auto mt-6">
+    <h2 class="text-xl font-semibold mb-2 text-yellow-400">Result</h2>
+    <div id="result" class="bg-gray-800 p-4 rounded-lg shadow text-white"></div>
+  </section>
 
   <script>
     const users = [];
@@ -84,22 +84,22 @@
     function renderDishTable() {
       if (dishes.length === 0) return;
 
-      let html = '<table><tr><th>Dish</th><th>Price</th>';
+      let html = '<table class="table-auto w-full text-left text-sm"><thead><tr class="bg-gray-700"><th class="px-4 py-2">Dish</th><th class="px-4 py-2">Price (₹)</th>';
       users.forEach(user => {
-        html += `<th>${user}</th>`;
+        html += `<th class="px-4 py-2">${user}</th>`;
       });
-      html += '</tr>';
+      html += '</tr></thead><tbody>';
 
       dishes.forEach((dish, i) => {
-        html += `<tr><td>${dish.name}</td><td>${dish.price.toFixed(2)}</td>`;
+        html += `<tr class="border-b border-gray-700"><td class="px-4 py-2">${dish.name}</td><td class="px-4 py-2">₹${dish.price.toFixed(2)}</td>`;
         users.forEach(user => {
           const checked = dish.consumers.includes(user) ? 'checked' : '';
-          html += `<td><input type="checkbox" onchange="toggleConsumer(${i}, '${user}')" ${checked}></td>`;
+          html += `<td class="px-4 py-2 text-center"><input type="checkbox" onchange="toggleConsumer(${i}, '${user}')" ${checked}></td>`;
         });
         html += '</tr>';
       });
 
-      html += '</table>';
+      html += '</tbody></table>';
       document.getElementById("dishTable").innerHTML = html;
     }
 
@@ -132,9 +132,9 @@
       const discountAmount = (discountPercent / 100) * total;
       const finalTotal = total - discountAmount;
 
-      const resultHTML = [`<p>Total: ₹${total.toFixed(2)}</p>`,
-                          `<p>Discount: ₹${discountAmount.toFixed(2)} (${discountPercent}%)</p>`,
-                          `<p>Final Total: ₹${finalTotal.toFixed(2)}</p>`];
+      const resultHTML = [`<p class="mb-1">Total: ₹${total.toFixed(2)}</p>`,
+                          `<p class="mb-1">Discount: ₹${discountAmount.toFixed(2)} (${discountPercent}%)</p>`,
+                          `<p class="mb-3 font-semibold">Final Total: ₹${finalTotal.toFixed(2)}</p>`];
 
       users.forEach(user => {
         const share = (userTotals[user] / total) * finalTotal;
