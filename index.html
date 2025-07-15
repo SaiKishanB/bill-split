@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bill Splitter</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     html { font-family: 'Open Sans', sans-serif; }
   </style>
@@ -17,7 +17,6 @@
   </header>
 
   <main class="max-w-6xl mx-auto grid gap-6 md:grid-cols-2">
-    <!-- User Section -->
     <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
       <h2 class="text-xl font-semibold mb-4">Add Users</h2>
       <div class="flex mb-4">
@@ -27,7 +26,6 @@
       <p id="userList" class="text-sm text-gray-300"></p>
     </section>
 
-    <!-- Dish Section -->
     <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
       <h2 class="text-xl font-semibold mb-4">Add Dishes</h2>
       <div class="flex mb-4 gap-2 flex-wrap">
@@ -40,9 +38,12 @@
   </main>
 
   <section class="max-w-6xl mx-auto mt-6">
-    <div class="flex justify-end items-center mb-4">
-      <label for="discount" class="mr-2 font-semibold">Overall Discount %</label>
-      <input id="discount" type="number" placeholder="e.g. 10" class="p-2 rounded bg-gray-700 text-white w-24 placeholder-gray-400" />
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex items-center">
+        <label for="discount" class="mr-2 font-semibold">Overall Discount %</label>
+        <input id="discount" type="number" placeholder="e.g. 10" class="p-2 rounded bg-gray-700 text-white w-24 placeholder-gray-400" />
+      </div>
+      <button onclick="resetAll()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500">Reset All</button>
     </div>
     <div id="dishTable" class="overflow-auto"></div>
     <button onclick="calculateSplit()" class="mt-4 bg-green-500 text-black px-6 py-2 rounded font-bold hover:bg-green-400 transition">Calculate Split</button>
@@ -56,6 +57,7 @@
   <script>
     const users = [];
     const dishes = [];
+    let editMode = {};
 
     function addUser() {
       const name = document.getElementById("userName").value.trim();
@@ -85,21 +87,26 @@
     }
 
     function renderDishTable() {
-      if (dishes.length === 0) return;
-
       let html = '<table class="table-auto w-full text-left text-sm"><thead><tr class="bg-gray-700"><th class="px-4 py-2">Dish</th><th class="px-4 py-2">Qty</th><th class="px-4 py-2">Price (₹)</th>';
       users.forEach(user => {
         html += `<th class="px-4 py-2">${user}</th>`;
       });
-      html += '</tr></thead><tbody>';
+      html += '<th class="px-4 py-2">Actions</th></tr></thead><tbody>';
 
       dishes.forEach((dish, i) => {
-        html += `<tr class="border-b border-gray-700"><td class="px-4 py-2">${dish.name}</td><td class="px-4 py-2">${dish.count}</td><td class="px-4 py-2">₹${dish.price.toFixed(2)}</td>`;
+        const isEditing = editMode[i];
+        html += `<tr class="border-b border-gray-700">
+          <td class="px-4 py-2">${isEditing ? `<input type='text' value='${dish.name}' onchange="editDish(${i}, 'name', this.value)" class="bg-gray-700 text-white p-1 rounded w-full" />` : dish.name}</td>
+          <td class="px-4 py-2">${isEditing ? `<input type='number' value='${dish.count}' onchange="editDish(${i}, 'count', this.value)" class="bg-gray-700 text-white p-1 rounded w-full" />` : dish.count}</td>
+          <td class="px-4 py-2">${isEditing ? `<input type='number' value='${dish.price}' onchange="editDish(${i}, 'price', this.value)" class="bg-gray-700 text-white p-1 rounded w-full" />` : `₹${dish.price.toFixed(2)}`}</td>`;
         users.forEach(user => {
           const checked = dish.consumers.includes(user) ? 'checked' : '';
           html += `<td class="px-4 py-2 text-center"><input type="checkbox" onchange="toggleConsumer(${i}, '${user}')" ${checked}></td>`;
         });
-        html += '</tr>';
+        html += `<td class="px-4 py-2 text-center">
+          <button onclick="deleteDish(${i})" class="text-red-400 hover:underline mr-2">Delete</button>
+          <button onclick="toggleEditRow(${i})" class="text-blue-400 hover:underline">${isEditing ? 'Save' : 'Edit'}</button>
+        </td></tr>`;
       });
 
       html += '</tbody></table>';
@@ -116,13 +123,28 @@
       }
     }
 
+    function toggleEditRow(index) {
+      editMode[index] = !editMode[index];
+      renderDishTable();
+    }
+
+    function editDish(index, field, value) {
+      if (field === 'name') dishes[index].name = value;
+      if (field === 'price') dishes[index].price = parseFloat(value) || 0;
+      if (field === 'count') dishes[index].count = parseInt(value) || 1;
+    }
+
+    function deleteDish(index) {
+      dishes.splice(index, 1);
+      delete editMode[index];
+      renderDishTable();
+    }
+
     function calculateSplit() {
       const discountPercent = parseFloat(document.getElementById("discount").value) || 0;
       const userTotals = {};
       users.forEach(user => userTotals[user] = 0);
-
       let total = 0;
-
       dishes.forEach(dish => {
         if (dish.consumers.length === 0) return;
         total += dish.price;
@@ -131,20 +153,30 @@
           userTotals[user] += splitPrice;
         });
       });
-
       const discountAmount = (discountPercent / 100) * total;
       const finalTotal = total - discountAmount;
-
       const resultHTML = [`<p class="mb-1">Total: ₹${total.toFixed(2)}</p>`,
-                          `<p class="mb-1">Discount: ₹${discountAmount.toFixed(2)} (${discountPercent}%)</p>`,
-                          `<p class="mb-3 font-semibold">Final Total: ₹${finalTotal.toFixed(2)}</p>`];
-
+        `<p class="mb-1">Discount: ₹${discountAmount.toFixed(2)} (${discountPercent}%)</p>`,
+        `<p class="mb-3 font-semibold">Final Total: ₹${finalTotal.toFixed(2)}</p>`];
       users.forEach(user => {
         const share = (userTotals[user] / total) * finalTotal;
         resultHTML.push(`<p>${user}: ₹${share.toFixed(2)}</p>`);
       });
-
       document.getElementById("result").innerHTML = resultHTML.join('');
+    }
+
+    function resetAll() {
+      users.length = 0;
+      dishes.length = 0;
+      editMode = {};
+      document.getElementById("userName").value = "";
+      document.getElementById("dishName").value = "";
+      document.getElementById("dishPrice").value = "";
+      document.getElementById("dishCount").value = 1;
+      document.getElementById("discount").value = "";
+      document.getElementById("userList").innerText = "";
+      document.getElementById("dishTable").innerHTML = "";
+      document.getElementById("result").innerHTML = "";
     }
   </script>
 </body>
